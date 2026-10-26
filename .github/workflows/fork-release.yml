@@ -29,9 +29,10 @@ jobs:
           echo "Building tag: '${{ inputs.tag }}'"
           test -n "${{ inputs.tag }}" || { echo "::error::No tag was passed to this workflow"; exit 1; }
 
+      # Build from the fork's default branch (upstream + our patches), NOT the
+      # upstream tag: the tag's commit doesn't contain the fork's changes. The
+      # tag is only used as the version label and release name.
       - uses: actions/checkout@v6
-        with:
-          ref: refs/tags/${{ inputs.tag }}
 
       - uses: actions/setup-go@v6
         with:
