@@ -1,0 +1,60 @@
+# Fork-only: keep main in sync with ao-data/albiondata-client and build a
+# release for each new upstream tag.
+#
+# Optional secret SYNC_TOKEN: a personal access token with repo + workflow
+# scope. Needed only when upstream changes files under .github/workflows
+# (the default token is not allowed to push those).
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    outputs:
+      new_tags: ${{ steps.sync.outputs.new_tags }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.SYNC_TOKEN || github.token }}
+
+      - name: Merge upstream
+        id: sync
+        run: |
+          git config user.name "fork-sync[bot]"
+          git config user.email "fork-sync@users.noreply.github.com"
+          git remote add upstream https://github.com/ao-data/albiondata-client.git
+          git fetch upstream --tags --force
+          before=$(git tag | sort)
+          if ! git merge upstream/main --no-edit; then
+            echo "::error::Merge conflict with upstream/main. Resolve locally: git fetch upstream && git merge upstream/main"
+            exit 1
+          fi
+          git push origin HEAD:main
+          git push origin --tags
+          # tags that are new to this fork and have no release yet
+          new=""
+          for t in $(git tag --list '[0-9]*' | sort -V | tail -1); do
+            gh release view "$t" >/dev/null 2>&1 || new="$new $t"
+          done
+          echo "new_tags=$(echo $new | xargs -n1 | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  release:
+    needs: sync
+    if: needs.sync.outputs.new_tags != '[]' && needs.sync.outputs.new_tags != ''
+    strategy:
+      matrix:
+        tag: ${{ fromJSON(needs.sync.outputs.new_tags) }}
+    uses: ./.github/workflows/fork-release.yml
+    with:
+      tag: ${{ matrix.tag }}

@@ -47,3 +47,15 @@ func TestFormatDebugPhotonParams_collapsesZeros(t *testing.T) {
 		t.Fatalf("expected collapse marker in: %s", s)
 	}
 }
+
+// Fork patch: market-order JSON strings (~300-500 chars) must not be truncated
+// in debug output, or external log parsers lose ItemTypeId, SellerName, etc.
+func TestFormatDebugString_keepsMarketOrderJSON(t *testing.T) {
+	s := `{"Id":123456789,"UnitPriceSilver":12340000,"TotalPriceSilver":12340000,"Amount":1,"Tier":4,"IsFinished":false,"AuctionType":"offer","HasBuyerFetched":false,"HasSellerFetched":true,"SellerCharacterId":"00000000-0000-0000-0000-000000000000","SellerName":"SomeLongPlayerName","BuyerCharacterId":null,"BuyerName":null,"ItemTypeId":"T4_BAG@1","ItemGroupTypeId":"T4_BAG","EnchantmentLevel":1,"QualityLevel":1,"Expires":"2026-11-20T12:00:00.000000","ReferenceId":"00000000-0000-0000-0000-000000000000"}`
+	if len(s) <= 240 {
+		t.Fatalf("test string too short: %d", len(s))
+	}
+	if got := formatDebugString(s); !strings.Contains(got, `Expires`) || strings.Contains(got, "(len=") {
+		t.Fatalf("string was truncated: %s", got)
+	}
+}

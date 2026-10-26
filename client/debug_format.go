@@ -11,7 +11,10 @@ import (
 const (
 	debugFormatMaxDepth    = 5
 	debugFormatMinZeroRun  = 10
-	debugFormatMaxString   = 240
+	// Fork patch: stock value is 240, which truncates the JSON order strings in
+	// opAuctionGetOffers responses (AlbionMarketLogger.ps1 depends on them
+	// being whole). Entries are a few hundred chars each; 4096 leaves headroom.
+	debugFormatMaxString   = 4096
 	debugFormatMaxHexBytes = 512
 )
 
