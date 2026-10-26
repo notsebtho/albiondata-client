@@ -24,9 +24,14 @@ jobs:
     env:
       TAG: ${{ inputs.tag }}
     steps:
+      - name: Check tag input
+        run: |
+          echo "Building tag: '${{ inputs.tag }}'"
+          test -n "${{ inputs.tag }}" || { echo "::error::No tag was passed to this workflow"; exit 1; }
+
       - uses: actions/checkout@v6
         with:
-          ref: refs/tags/${{ env.TAG }}
+          ref: refs/tags/${{ inputs.tag }}
 
       - uses: actions/setup-go@v6
         with:
