@@ -49,9 +49,14 @@ jobs:
           sed -i 's|UpdateGithubOwner: "ao-data"|UpdateGithubOwner: "${{ github.repository_owner }}"|; s|UpdateGithubRepo:  "albiondata-client"|UpdateGithubRepo:  "${{ github.event.repository.name }}"|' client/config.go
           grep -n 'UpdateGithub' client/config.go | sed -n 3,4p
 
+      # GITHUB_REF_NAME is a protected default variable and can't be overridden
+      # via env, so bake the tag into the build script instead.
+      - name: Set version in build script
+        run: |
+          sed -i "s|main.version=\$GITHUB_REF_NAME|main.version=$TAG|" scripts/build-windows.sh
+          grep -n "main.version" scripts/build-windows.sh
+
       - name: Build Windows
-        env:
-          GITHUB_REF_NAME: ${{ env.TAG }}
         run: make build-windows
 
       - name: Publish release
