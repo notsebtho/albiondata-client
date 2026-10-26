@@ -1,4 +1,4 @@
-# Fork-only: keep main in sync with ao-data/albiondata-client and build a
+# Fork-only: keep master in sync with ao-data/albiondata-client and build a
 # release for each new upstream tag.
 #
 # Optional secret SYNC_TOKEN: a personal access token with repo + workflow
@@ -34,11 +34,11 @@ jobs:
           git remote add upstream https://github.com/ao-data/albiondata-client.git
           git fetch upstream --tags --force
           before=$(git tag | sort)
-          if ! git merge upstream/main --no-edit; then
-            echo "::error::Merge conflict with upstream/main. Resolve locally: git fetch upstream && git merge upstream/main"
+          if ! git merge upstream/master --no-edit; then
+            echo "::error::Merge conflict with upstream/master. Resolve locally: git fetch upstream && git merge upstream/master"
             exit 1
           fi
-          git push origin HEAD:main
+          git push origin HEAD:master
           git push origin --tags
           # tags that are new to this fork and have no release yet
           new=""
