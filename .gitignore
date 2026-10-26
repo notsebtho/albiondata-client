@@ -25,3 +25,4 @@ run.sh
 *.syso
 *.tmp
 .worktrees/
+Claude outputs/
