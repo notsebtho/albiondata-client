@@ -39,7 +39,10 @@ jobs:
             exit 1
           fi
           git push origin HEAD:master
-          git push origin --tags
+          # Only push the newest upstream tag: older tags point at commits that
+          # contain workflow files, which the default token may not push.
+          latest=$(git tag --list '[0-9]*' | sort -V | tail -1)
+          git push origin "refs/tags/$latest"
           # tags that are new to this fork and have no release yet
           new=""
           for t in $(git tag --list '[0-9]*' | sort -V | tail -1); do
