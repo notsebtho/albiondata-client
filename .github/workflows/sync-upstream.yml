@@ -19,7 +19,7 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     outputs:
-      new_tags: ${{ steps.sync.outputs.new_tags }}
+      new_tag: ${{ steps.sync.outputs.new_tag }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -43,21 +43,16 @@ jobs:
           # contain workflow files, which the default token may not push.
           latest=$(git tag --list '[0-9]*' | sort -V | tail -1)
           git push origin "refs/tags/$latest"
-          # tags that are new to this fork and have no release yet
+          # build a release for the newest tag if this fork has none yet
           new=""
-          for t in $(git tag --list '[0-9]*' | sort -V | tail -1); do
-            gh release view "$t" >/dev/null 2>&1 || new="$new $t"
-          done
-          echo "new_tags=$(echo $new | xargs -n1 | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+          gh release view "$latest" >/dev/null 2>&1 || new="$latest"
+          echo "new_tag=$new" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ github.token }}
 
   release:
     needs: sync
-    if: needs.sync.outputs.new_tags != '[]' && needs.sync.outputs.new_tags != ''
-    strategy:
-      matrix:
-        tag: ${{ fromJSON(needs.sync.outputs.new_tags) }}
+    if: needs.sync.outputs.new_tag != ''
     uses: ./.github/workflows/fork-release.yml
     with:
-      tag: ${{ matrix.tag }}
+      tag: ${{ needs.sync.outputs.new_tag }}
